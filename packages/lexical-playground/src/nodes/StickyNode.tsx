@@ -10,6 +10,7 @@ import type {
   EditorConfig,
   LexicalEditor,
   LexicalNode,
+  LexicalUpdateJSON,
   NodeKey,
   SerializedEditor,
   SerializedLexicalNode,
@@ -21,10 +22,7 @@ import * as React from 'react';
 import {Suspense} from 'react';
 import {createPortal} from 'react-dom';
 
-const StickyComponent = React.lazy(
-  // @ts-ignore
-  () => import('./StickyComponent'),
-);
+const StickyComponent = React.lazy(() => import('./StickyComponent'));
 
 type StickyNoteColor = 'pink' | 'yellow';
 
@@ -58,11 +56,17 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
     );
   }
   static importJSON(serializedNode: SerializedStickyNode): StickyNode {
-    const stickyNode = new StickyNode(
+    return new StickyNode(
       serializedNode.xOffset,
       serializedNode.yOffset,
       serializedNode.color,
-    );
+    ).updateFromJSON(serializedNode);
+  }
+
+  updateFromJSON(
+    serializedNode: LexicalUpdateJSON<SerializedStickyNode>,
+  ): this {
+    const stickyNode = super.updateFromJSON(serializedNode);
     const caption = serializedNode.caption;
     const nestedEditor = stickyNode.__caption;
     const editorState = nestedEditor.parseEditorState(caption.editorState);
@@ -88,10 +92,9 @@ export class StickyNode extends DecoratorNode<JSX.Element> {
 
   exportJSON(): SerializedStickyNode {
     return {
+      ...super.exportJSON(),
       caption: this.__caption.toJSON(),
       color: this.__color,
-      type: 'sticky',
-      version: 1,
       xOffset: this.__x,
       yOffset: this.__y,
     };
